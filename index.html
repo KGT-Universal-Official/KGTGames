@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Free Online Games By KGT Universal [KGT Games] - Play Now!</title>
+    <meta name="description" content="Play free online games at KGT Universal, the #1 web portal for instant games. Explore puzzle, adventure, horror, racing, and new games daily - no install required!">
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Identity Services Script -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+
+    <!-- Top Search Bar -->
+    <div class="search-container">
+        <input type="text" id="game-search" placeholder="Search games..." onkeyup="filterGames()">
+    </div>
+
+    <!-- Main Navigation Cards -->
+    <div class="main-nav-cards">
+        <div class="nav-card" onclick="filterCategory('all')">🎮 Games</div>
+        <div class="nav-card" onclick="showRecentGames()">🕒 Recently Played</div>
+        <div class="nav-card" onclick="showFavoriteGames()">❤️ Favourite Games</div>
+        <div class="nav-card" id="profile-btn" onclick="handleProfileClick()">👤 Profile / Login</div>
+    </div>
+
+    <!-- Categories Filter Bar -->
+    <div class="categories-bar">
+        <button onclick="filterCategory('all')">All</button>
+        <button onclick="filterCategory('puzzle')">Puzzle</button>
+        <button onclick="filterCategory('adventure')">Adventure</button>
+        <button onclick="filterCategory('horror')">Horror</button>
+        <button onclick="filterCategory('racing')">Racing</button>
+    </div>
+
+    <!-- Games Grid Container -->
+    <div class="games-grid" id="games-container">
+        <!-- Dynamic Games Will Load Here -->
+    </div>
+
+    <!-- Scripts Integration -->
+    <script src="auth.js"></script>
+    <script src="games-data.js"></script>
+    <script src="app.js"></script>
+    <script>
+        // Extra helper views for Recent and Favourites
+        function showFavoriteGames() {
+            const favList = gamesList.filter(g => favorites.includes(g.id));
+            renderGames(favList);
+        }
+        function showRecentGames() {
+            const recList = recentGames.map(id => gamesList.find(g => g.id === id)).filter(Boolean);
+            renderGames(recList);
+        }
+    </script>
+</body>
+</html>
