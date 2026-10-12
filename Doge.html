@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Doge Clicker 2 - Premium Edition</title>
+    <style>
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+        html, body {
+            margin: 0; padding: 0;
+            background: url('dogebackground.png') no-repeat center center fixed;
+            background-size: cover;
+            font-family: Arial, sans-serif;
+            display: flex; flex-direction: column; align-items: center;
+            height: 100vh; overflow: hidden;
+            overscroll-behavior-y: none;
+            touch-action: manipulation;
+        }
+        /* Top Bar */
+        .top-bar {
+            width: 100%; background: linear-gradient(to right, #ff8800, #ffaa00);
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 12px; color: white; font-weight: bold; font-size: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .app-title {
+            font-size: 16px; font-weight: 800; letter-spacing: 0.5px; white-space: nowrap; margin-right: 5px;
+        }
+        .score-board {
+            background: #111; padding: 5px 10px; border-radius: 6px; color: #ffcc00; font-size: 14px; white-space: nowrap;
+        }
+        .action-buttons { display: flex; gap: 5px; }
+        .btn-custom {
+            background: white; color: #ff8800; border: none; padding: 5px 8px;
+            font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .btn-custom:active { transform: scale(0.95); }
+        
+        /* Main Game Screen */
+        .game-container {
+            flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            width: 100%; padding-bottom: 20px;
+        }
+        .dog-img-container {
+            width: 220px; height: 220px; display: flex; justify-content: center; align-items: center;
+            margin-bottom: 20px; cursor: pointer;
+        }
+        .dog-img-container img {
+            max-width: 100%; max-height: 100%; object-fit: contain;
+            transition: transform 0.05s ease;
+        }
+        .dog-img-container img:active { transform: scale(0.93); }
+
+        .bonk-btn {
+            background: linear-gradient(to bottom, #ffcc00, #ff6600);
+            color: white; border: 3px solid #cc5200; padding: 12px 40px;
+            font-size: 18px; font-weight: bold; border-radius: 35px;
+            box-shadow: 0px 5px 0px #993d00; cursor: pointer; outline: none;
+            margin-bottom: 15px;
+        }
+        .bonk-btn:active {
+            transform: translateY(3px); box-shadow: 0px 2px 0px #993d00;
+        }
+
+        /* Shop Modal */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 10;
+        }
+        .modal-content {
+            background: white; width: 92%; max-height: 85vh; border-radius: 12px;
+            display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .modal-header {
+            background: #ff9900; color: white; padding: 15px; display: flex;
+            justify-content: space-between; align-items: center; font-size: 18px; font-weight: bold;
+        }
+        .close-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+        .modal-body { padding: 15px; overflow-y: auto; flex: 1; }
+        
+        .section-heading {
+            font-size: 15px; font-weight: bold; color: #d9534f; margin: 10px 0 6px 0; border-bottom: 2px solid #eee; padding-bottom: 4px;
+        }
+        .skin-item {
+            display: flex; align-items: center; justify-content: space-between;
+            background: #f9f9f9; margin-bottom: 12px; padding: 10px; border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .skin-info { display: flex; align-items: center; }
+        .skin-info img { width: 50px; height: 50px; object-fit: contain; border-radius: 6px; }
+        .skin-details { margin-left: 10px; }
+        .skin-name { font-weight: bold; font-size: 14px; color: #333; }
+        .skin-rarity { font-size: 11px; color: #666; margin-top: 2px; }
+        .buy-action-btn {
+            background: #28a745; color: white; border: none; padding: 8px 12px;
+            border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 12px;
+        }
+        .buy-action-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .msg-box { text-align: center; font-size: 13px; color: #d9534f; padding: 10px; font-weight: bold; background: #fff3f3; border-top: 1px solid #ffdddd;}
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <span class="app-title">Doge Clicker 2</span>
+        <div class="score-board">Coins: <span id="score">0</span></div>
+        <div class="action-buttons">
+            <button class="btn-custom" onclick="toggleShop()">Shop</button>
+            <button class="btn-custom" onclick="saveProgress()" style="background:#28a745; color:white;">Save</button>
+            <button class="btn-custom" onclick="resetProgress()" style="background:#dc3545; color:white;">Reset</button>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <div class="dog-img-container" onclick="incrementScore()">
+            <img id="mainDogImage" src="skin_1.png" alt="Kabosu">
+        </div>
+        <button class="bonk-btn" onclick="incrementScore()">Dogecoin</button>
+    </div>
+
+    <!-- Shop Modal -->
+    <div id="shopModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>Doge Wardrobe / Skins</span>
+                <button class="close-btn" onclick="toggleShop()">&times;</button>
+            </div>
+            <div class="modal-body" id="shopList"></div>
+            <div class="msg-box" id="shopMessage"></div>
+        </div>
+    </div>
+
+    <script>
+        let score = parseInt(localStorage.getItem("doge_saved_score")) || 0;
+        let unlockedSkinIndex = parseInt(localStorage.getItem("doge_saved_unlocked")) || 0;
+        let currentSkinIndex = parseInt(localStorage.getItem("doge_saved_current")) || 0;
+
+        let purchasedPremium = JSON.parse(localStorage.getItem("doge_saved_premium")) || [false, false, false, false, false];
+        let currentActiveType = localStorage.getItem("doge_active_type") || "coin";
+        let activePremiumIndex = parseInt(localStorage.getItem("doge_active_premium_index")) || 0;
+
+        const coinSkins = [
+            { name: "Skin 1", price: 0, rarity: "Default Skin", img: "skin_1.png" },
+            { name: "Skin 2", price: 1000, rarity: "Common Skin", img: "skin_2.png" },
+            { name: "Skin 3", price: 2000, rarity: "Common Skin", img: "skin_3.png" },
+            { name: "Skin 4", price: 7000, rarity: "Uncommon Skin", img: "skin_4.png" },
+            { name: "Skin 5", price: 10000, rarity: "Uncommon Skin", img: "skin_5.png" },
+            { name: "Skin 6", price: 15000, rarity: "Rare", img: "skin_6.png" },
+            { name: "Skin 7", price: 20000, rarity: "Ultra Rare", img: "skin_7.png" },
+            { name: "Skin 8", price: 25000, rarity: "Rich Skin", img: "skin_8.png" },
+            { name: "Skin 9", price: 40000, rarity: "Premium Skin", img: "skin_9.png" },
+            { name: "Skin 10", price: 50000, rarity: "Trillionaire Skin", img: "skin_10.png" }
+        ];
+
+        const premiumSkins = [
+            { name: "Skin 1", priceText: "₹30", priceValue: 30, rarity: "Best skin", img: "premium_skin_1.png" },
+            { name: "Skin 2", priceText: "₹60", priceValue: 60, rarity: "Middle class choice", img: "premium_skin_2.png" },
+            { name: "Skin 3", priceText: "₹99", priceValue: 99, rarity: "Rich people choice", img: "premium_skin_3.png" },
+            { name: "Skin 4", priceText: "₹199", priceValue: 199, rarity: "Billionaires choice", img: "premium_skin_4.png" },
+            { name: "Skin 5", priceText: "₹299", priceValue: 299, rarity: "Trillionaires choice", img: "premium_skin_5.png" }
+        ];
+
+        document.getElementById("score").innerText = score;
+        
+        if (currentActiveType === "premium") {
+            document.getElementById("mainDogImage").src = premiumSkins[activePremiumIndex].img;
+        } else {
+            document.getElementById("mainDogImage").src = coinSkins[currentSkinIndex].img;
+        }
+
+        function incrementScore() {
+            score += 1;
+            document.getElementById("score").innerText = score;
+            
+            let sound = new Audio("coin_sound.mp3");
+            sound.play().catch(e => {});
+        }
+
+        function saveProgress() {
+            localStorage.setItem("doge_saved_score", score);
+            localStorage.setItem("doge_saved_unlocked", unlockedSkinIndex);
+            localStorage.setItem("doge_saved_current", currentSkinIndex);
+            localStorage.setItem("doge_saved_premium", JSON.stringify(purchasedPremium));
+            localStorage.setItem("doge_active_type", currentActiveType);
+            localStorage.setItem("doge_active_premium_index", activePremiumIndex);
+            alert("Game Progress Saved Successfully!");
+        }
+
+        function resetProgress() {
+            if (confirm("Are you sure you want to reset all progress?")) {
+                localStorage.clear();
+                score = 0;
+                unlockedSkinIndex = 0;
+                currentSkinIndex = 0;
+                purchasedPremium = [false, false, false, false, false];
+                currentActiveType = "coin";
+                activePremiumIndex = 0;
+
+                document.getElementById("score").innerText = score;
+                document.getElementById("mainDogImage").src = coinSkins[currentSkinIndex].img;
+                
+                if(document.getElementById("shopModal").style.display === "flex") {
+                    renderShop();
+                }
+                alert("Progress Reset!");
+            }
+        }
+
+        function toggleShop() {
+            let modal = document.getElementById("shopModal");
+            if (modal.style.display === "flex") {
+                modal.style.display = "none";
+            } else {
+                modal.style.display = "flex";
+                renderShop();
+            }
+        }
+
+        function renderShop() {
+            let listHTML = "";
+
+            listHTML += `<div class="section-heading">⭐ Premium Skins Section</div>`;
+            for (let i = 0; i < premiumSkins.length; i++) {
+                let isBought = purchasedPremium[i];
+                let isEquipped = (currentActiveType === "premium" && activePremiumIndex === i);
+                let displayImg = isBought ? premiumSkins[i].img : "locked_question_premium.png";
+
+                let actionBtnHTML = "";
+                if (isEquipped) {
+                    actionBtnHTML = `<button class="buy-action-btn" style="background:#6c757d;" disabled>Equipped</button>`;
+                } else if (isBought) {
+                    actionBtnHTML = `<button class="buy-action-btn" style="background:#17a2b8;" onclick="equipPremium(${i})">Equip</button>`;
+                } else {
+                    actionBtnHTML = `<button class="buy-action-btn" style="background:#d9534f;" onclick="buyPremiumSkin(${i})">Buy (${premiumSkins[i].priceText})</button>`;
+                }
+
+                listHTML += `
+                    <div class="skin-item">
+                        <div class="skin-info">
+                            <img src="${displayImg}" alt="skin">
+                            <div class="skin-details">
+                                <div class="skin-name">${premiumSkins[i].name}</div>
+                                <div class="skin-rarity">${premiumSkins[i].rarity}</div>
+                            </div>
+                        </div>
+                        <div>${actionBtnHTML}</div>
+                    </div>
+                `;
+            }
+
+            listHTML += `<div class="section-heading" style="margin-top:15px;">🪙 Coin Skins Wardrobe</div>`;
+            for (let i = 0; i < coinSkins.length; i++) {
+                let isUnlocked = i <= unlockedSkinIndex;
+                let isEquipped = (currentActiveType === "coin" && i === currentSkinIndex);
+                let displayImg = isUnlocked ? coinSkins[i].img : "locked_question.png";
+                
+                let actionBtnHTML = "";
+                if (isEquipped) {
+                    actionBtnHTML = `<button class="buy-action-btn" style="background:#6c757d;" disabled>Equipped</button>`;
+                } else if (isUnlocked) {
+                    actionBtnHTML = `<button class="buy-action-btn" style="background:#17a2b8;" onclick="equipSkin(${i})">Equip</button>`;
+                } else if (i === unlockedSkinIndex + 1) {
+                    actionBtnHTML = `<button class="buy-action-btn" onclick="buySkin(${i})">Buy (${coinSkins[i].price})</button>`;
+                } else {
+                    actionBtnHTML = `<button class="buy-action-btn" disabled>Locked</button>`;
+                }
+
+                listHTML += `
+                    <div class="skin-item">
+                        <div class="skin-info">
+                            <img src="${displayImg}" alt="skin">
+                            <div class="skin-details">
+                                <div class="skin-name">${coinSkins[i].name}</div>
+                                <div class="skin-rarity">${coinSkins[i].rarity}</div>
+                            </div>
+                        </div>
+                        <div>${actionBtnHTML}</div>
+                    </div>
+                `;
+            }
+
+            let nextNum = unlockedSkinIndex < coinSkins.length - 1 ? unlockedSkinIndex + 2 : coinSkins.length;
+            let msgText = unlockedSkinIndex < coinSkins.length - 1 ? `Buy ${nextNum}th coin skin sequentially!` : `All coin skins unlocked!`;
+
+            document.getElementById("shopList").innerHTML = listHTML;
+            document.getElementById("shopMessage").innerText = msgText;
+        }
+
+        function buySkin(index) {
+            let requiredCoins = coinSkins[index].price;
+            if (score >= requiredCoins) {
+                score -= requiredCoins;
+                document.getElementById("score").innerText = score;
+                unlockedSkinIndex = index;
+                currentSkinIndex = index;
+                currentActiveType = "coin";
+                document.getElementById("mainDogImage").src = coinSkins[index].img;
+                renderShop();
+                alert("Skin Purchased! Click 'Save' to keep your progress.");
+            } else {
+                alert("Not enough coins! Keep clicking Dogecoin!");
+            }
+        }
+
+        function equipSkin(index) {
+            currentSkinIndex = index;
+            currentActiveType = "coin";
+            document.getElementById("mainDogImage").src = coinSkins[index].img;
+            renderShop();
+        }
+
+        function buyPremiumSkin(index) {
+            let skin = premiumSkins[index];
+            if (window.AndroidBilling && typeof window.AndroidBilling.startPurchase === "function") {
+                window.AndroidBilling.startPurchase("skin_" + (index + 1));
+            } else {
+                if (confirm("Simulate successful payment of " + skin.priceText + " for " + skin.name + "?")) {
+                    onPremiumPurchaseSuccess(index);
+                }
+            }
+        }
+
+        function onPremiumPurchaseSuccess(index) {
+            purchasedPremium[index] = true;
+            activePremiumIndex = index;
+            currentActiveType = "premium";
+            
+            document.getElementById("mainDogImage").src = premiumSkins[index].img;
+            localStorage.setItem("doge_saved_premium", JSON.stringify(purchasedPremium));
+            localStorage.setItem("doge_active_type", currentActiveType);
+            localStorage.setItem("doge_active_premium_index", activePremiumIndex);
+            
+            renderShop();
+            alert("Congratulations! " + premiumSkins[index].name + " unlocked and saved permanently!");
+        }
+
+        function equipPremium(index) {
+            activePremiumIndex = index;
+            currentActiveType = "premium";
+            document.getElementById("mainDogImage").src = premiumSkins[index].img;
+            renderShop();
+        }
+    </script>
+</body>
+</html>
