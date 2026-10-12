@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chess Board: Naturescapes</title>
+
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Chessboard.js & jQuery & Chess.js -->
+    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+    <style>
+
+        /* Side Button Styling */
+  #side-fs-btn {
+            position: fixed;
+            right: 0;
+            top: 10%; /* Yahan 50% ki jagah 20% ya 25% kar dein taaki wo upar chala jaye */
+            transform: translateY(-50%);
+            z-index: 99999;
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 12px 8px;
+            border-radius: 8px 0 0 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+  /* Toast Message Styling */
+  #fs-toast {
+    position: fixed;
+    top: 15%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.85);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 14px;
+    z-index: 100000;
+    display: none;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+        * {
+            -webkit-user-select: none; /* Safari/Chrome */
+            user-select: none;         /* Standard */
+            -webkit-tap-highlight-color: transparent; /* Tap highlight hatane ke liye */
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
+                        url('background.jpg') no-repeat center center fixed;
+            background-size: cover;
+            color: #f8fafc;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: background 0.2s ease;
+        }
+
+        /* Main Menu Screens */
+        .menu-container {
+            background: rgba(20, 15, 10, 0.92);
+            backdrop-filter: blur(16px);
+            border: 2px solid var(--theme-border, rgba(245, 158, 11, 0.4));
+            padding: 15px 20px;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 90%;
+            max-width: 380px;
+            max-height: 85vh; /* Screen ki height ke andar limit rakhega */
+            align-items: center;
+            z-index: 10;
+            overflow-y: auto; /* Agar menu bada ho toh poora menu bhi scroll ho sake */
+            overflow-x: hidden;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease;
+        }
+        
+        /* Scrollable Theme Menu */
+        .theme-scroll-box {
+            max-height: 180px; /* Height thodi aur optimized ki hai taaki saare naam dabbe ke andar fit aayein */
+            overflow-y: auto;
+            overflow-x: hidden;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-right: 5px;
+            box-sizing: border-box;
+        }
+        .theme-scroll-box::-webkit-scrollbar {
+            width: 6px;
+        }
+        .theme-scroll-box::-webkit-scrollbar-thumb {
+            background: var(--theme-border, #d97706);
+            border-radius: 10px;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.2rem;
+            color: var(--theme-accent, #f59e0b);
+            margin-bottom: 2px;
+            text-align: center;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+            transition: color 0.3s ease;
+        }
+        .subtitle {
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        .menu-btn {
+            width: 100%;
+            background: var(--theme-btn-bg, linear-gradient(135deg, #d97706 0%, #b45309 100%));
+            color: #fff;
+            border: none;
+            padding: 11px 18px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .menu-btn img {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            object-fit: cover;
+            border: 1px solid rgba(255,255,255,0.4);
+            flex-shrink: 0;
+        }
+        .menu-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.15);
+        }
+        .hidden {
+            display: none !important;
+        }
+
+        /* Game Screen Layout */
+        .game-screen {
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            position: relative;
+        }
+
+        .side-panel-left, .side-panel-right {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 20;
+            width: 130px;
+        }
+        .icon-btn {
+            background: rgba(30, 18, 10, 0.85);
+            border: 2px solid var(--theme-border, rgba(245, 158, 11, 0.5));
+            color: var(--theme-accent, #fbbf24);
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.6);
+            transition: all 0.2s ease;
+        }
+        .icon-btn:hover {
+            filter: brightness(1.2);
+            transform: scale(1.05);
+        }
+
+        /* Clocks */
+        .chess-clock {
+            background: rgba(20, 10, 5, 0.85);
+            border: 1px solid var(--theme-border, rgba(245, 158, 11, 0.4));
+            padding: 5px 10px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--theme-accent, #fbbf24);
+            font-weight: 600;
+        }
+        .chess-clock.active-timer {
+            border-color: #22c55e;
+            box-shadow: 0 0 12px rgba(34, 197, 94, 0.4);
+        }
+
+        /* Captured Pieces Box */
+        /* Captured Pieces Box */
+        .captured-box {
+            background: rgba(20, 10, 5, 0.8);
+            border: 1px solid var(--theme-border, rgba(245, 158, 11, 0.3));
+            border-radius: 10px;
+            padding: 6px;
+            min-height: 50px;
+            font-size: 0.75rem;
+            color: #cbd5e1;
+            text-align: center;
+        }
+        .captured-title {
+            font-size: 0.65rem;
+            color: var(--theme-accent, #fbbf24);
+            margin-bottom: 2px;
+            text-transform: uppercase;
+        }
+        .captured-icons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        /* Yahan par yeh line add kar sakte hain */
+        .board-container {
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+        }
+
+        /* Board Arena Container */
+        .board-arena {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            padding: 10px;
+            border-radius: 16px;
+            background: rgba(20, 10, 5, 0.4);
+        }
+
+        #board {
+            width: 330px;
+            height: 330px;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.9);
+            border: 4px solid var(--board-border-color, #5a3820);
+            position: relative;
+        }
+
+        /* Only Rotate Pieces and Notations 180° in Friend Mode */
+        .board-arena.rotate-pieces .piece-417db,
+        .board-arena.rotate-pieces .notation-322f9 {
+            transform: rotate(180deg);
+            transition: transform 0.4s ease;
+        }
+
+        .board-footer-label {
+            margin-top: 6px;
+            background: rgba(20, 10, 5, 0.9);
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            color: var(--theme-accent, #fbbf24);
+            border: 1px solid var(--theme-border, rgba(245, 158, 11, 0.3));
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* Move Indicator Dot */
+        .dot {
+            height: 12px;
+            width: 12px;
+            background-color: var(--theme-accent, #fbbf24);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 8px rgba(251, 191, 36, 0.9);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Check Red Blink Animation */
+        @keyframes redBlink {
+            0% { background-color: rgba(239, 68, 68, 0.3); }
+            50% { background-color: rgba(239, 68, 68, 0.8); box-shadow: 0 0 15px #ef4444; }
+            100% { background-color: rgba(239, 68, 68, 0.3); }
+        }
+        .check-blink {
+            animation: redBlink 0.8s infinite;
+        }
+
+        /* Pause Overlay */
+        .pause-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 5, 2, 0.96);
+            backdrop-filter: blur(12px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            border-radius: 16px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .pause-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .dialog-card {
+    background: linear-gradient(145deg, #3d2817, #1e1108);
+    border: 2px solid var(--theme-border, #f59e0b);
+    padding: 22px 25px;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.9);
+    width: 90%;
+    max-width: 380px; /* Dabbe ki chaudai badha di hai */
+    transform: scale(0.8);
+    transition: transform 0.3s ease;
+}
+/* Buttons container ke liye nayi styling */
+        .dialog-card > div, 
+        .dialog-buttons {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        /* Dialog ke andar ke saare buttons ko barabar fit karne ke liye */
+        .dialog-card button,
+        .dialog-card .menu-btn {
+            flex: 1;
+            width: auto !important;
+            padding: 10px 12px !important;
+            font-size: 0.85rem !important;
+            white-space: nowrap;
+        }
+        .modal-overlay.show .dialog-card {
+            transform: scale(1);
+        }
+        .dialog-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.6rem;
+            color: var(--theme-accent, #f59e0b);
+            margin-bottom: 6px;
+        }
+        .dialog-desc {
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            margin-bottom: 16px;
+            line-height: 1.4;
+        }
+
+        @media (max-height: 500px) {
+            body {
+                overflow-y: auto; /* Agar content thoda zyada ho toh scroll ho sake */
+                height: auto;
+                min-height: 100vh;
+            }
+            .menu-container {
+                max-height: 85vh;
+                margin: 10px auto;
+            }
+            .theme-scroll-box {
+                max-height: 150px; /* Landscape mein theme list ki height choti kar di hai */
+            }
+            #board {
+                width: 240px !important;
+                height: 240px !important;
+            }
+            .side-panel-left, .side-panel-right {
+                width: 90px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Fullscreen Button -->
+<button id="side-fs-btn">⛶ Full Screen</button>
+
+<!-- Alert Message Box -->
+<div id="fs-toast">You are already in full screen</div>
+
+    <!-- Loading Screen Overlay (Yeh sabse upar hona chahiye) -->
+    <div id="loading-screen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb') no-repeat center center/cover; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; color: white; font-family: 'Playfair Display', serif; text-align: center;">
+        <h1 style="font-size: 3.5rem; margin-bottom: 10px; text-shadow: 2px 2px 8px rgba(0,0,0,0.8);">Chess Board Game</h1>
+        <p style="font-size: 1.5rem; margin-bottom: 30px; text-shadow: 1px 1px 4px rgba(0,0,0,0.8);">by KGT Universal</p>
+        
+        <div style="width: 300px; height: 25px; background: rgba(255,255,255,0.3); border-radius: 15px; overflow: hidden; border: 2px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.5); margin-bottom: 20px;">
+            <div id="loading-bar-fill" style="width: 0%; height: 100%; background: linear-gradient(90deg, #4CAF50, #8BC34A); transition: width 0.3s ease;"></div>
+        </div>
+
+        <button id="loading-btn" style="padding: 12px 30px; font-size: 1.1rem; background: #ff9800; color: white; border: none; border-radius: 25px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.4); transition: transform 0.1s;">Click me to fill the bar</button>
+    </div>
+
+    <!-- Baaki ka game ka content yahan se shuru hoga -->
+    <div class="container...">
+<div style="position: absolute; top: 15px; left: 20px; font-family: 'Playfair Display', serif; font-size: 1.2rem; color: #fff; font-weight: bold; letter-spacing: 1px;">KGT Universal</div>
+
+    <!-- Main Menu Screen -->
+    <div class="menu-container" id="main-menu">
+        <h1>NATURAL THEME</h1>
+        <div class="subtitle">Ultimate Chess Experience [Connects You With Nature]</div>
+        <button class="menu-btn" id="btn-menu-bot">Play with Bot</button>
+        <button class="menu-btn" id="btn-vs-friend">Play with Friend</button>
+        <button class="menu-btn" id="btn-theme-settings" style="background: rgba(4, 119, 250, 0.822);">Themes</button>
+    </div>
+
+    <!-- Difficulty Menu Screen -->
+    <div class="menu-container hidden" id="difficulty-menu">
+        <h3 style="color: var(--theme-accent, #fbbf24); margin-bottom: 5px; font-family: 'Playfair Display', serif;">Select Bot Level</h3>
+        <button class="menu-btn" id="btn-level-easy">Easy</button>
+        <button class="menu-btn" id="btn-level-medium">Medium</button>
+        <button class="menu-btn" id="btn-level-hard">Hard</button>
+        <button class="menu-btn" id="btn-back-main" style="background: lch(62.42% 51.04 265.27 / 0.856); margin-top: 5px;">Back</button>
+    </div>
+
+    <!-- Themes & Boards Customization Screen (30 Total Themes with Thumbnails & Instant Apply) -->
+    <div class="menu-container hidden" id="theme-menu">
+        <h3 style="color: var(--theme-accent, #fbbf24); margin-bottom: 5px; font-family: 'Playfair Display', serif;">Choose Theme</h3>
+        <div class="theme-scroll-box">
+            <!-- Original 15 Themes -->
+            <button class="menu-btn" data-bg="background.jpg" data-border="#5a3820" data-accent="#f59e0b" data-btn="linear-gradient(135deg, #d97706 0%, #b45309 100%)"><img src="background.jpg">Classic Garden (Default)</button>
+            <button class="menu-btn" data-bg="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1920&auto=format&fit=crop" data-border="#1e3a8a" data-accent="#60a5fa" data-btn="linear-gradient(135deg, #2563eb 0%, #1e40af 100%)"><img src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=200&auto=format&fit=crop">Midnight Blue</button>
+            <button class="menu-btn" data-bg="https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=1920&auto=format&fit=crop" data-border="#d97706" data-accent="#fbbf24" data-btn="linear-gradient(135deg, #d97706 0%, #b45309 100%)"><img src="https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=200&auto=format&fit=crop">Royal Gold</button>
+            <button class="menu-btn" data-bg="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=1920&auto=format&fit=crop" data-border="#334155" data-accent="#94a3b8" data-btn="linear-gradient(135deg, #475569 0%, #1e293b 100%)"><img src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=200&auto=format&fit=crop">Dark Cyber Marble</button>
+            <button class="menu-btn" data-bg="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1920&auto=format&fit=crop" data-border="#0284c7" data-accent="#38bdf8" data-btn="linear-gradient(135deg, #0284c7 0%, #0369a1 100%)"><img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=200&auto=format&fit=crop">Ocean Blue Beach</button>
+            <button class="menu-btn" data-bg="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1920&auto=format&fit=crop" data-border="#be123c" data-accent="#fb7185" data-btn="linear-gradient(135deg, #e11d48 0%, #9f1239 100%)"><img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=200&auto=format&fit=crop">Sunset Glow</button>
+            <button class="menu-btn" data-bg="https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=1920&auto=format&fit=crop" data-border="#7c2d12" data-accent="#fdba74" data-btn="linear-gradient(135deg, #9a3412 0%, #7c2d12 100%)"><img src="https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=200&auto=format&fit=crop">Coffee Brown Luxury</button>
+            <button class="menu-btn" data-bg="https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1920&auto=format&fit=crop" data-border="#312e81" data-accent="#818cf8" data-btn="linear-gradient(135deg, #4f46e5 0%, #312e81 100%)"><img src="https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=200&auto=format&fit=crop">Starlight Night Sky</button>
+            <button class="menu-btn" data-bg="https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=1920&auto=format&fit=crop" data-border="#475569" data-accent="#cbd5e1" data-btn="linear-gradient(135deg, #64748b 0%, #334155 100%)"><img src="https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=200&auto=format&fit=crop">Vintage Retro Paper</button>
+            <button class="menu-btn" data-bg="https://images.unsplash.com/photo-1574169208507-84376144848b?q=80&w=1920&auto=format&fit=crop" data-border="#831843" data-accent="#f472b6" data-btn="linear-gradient(135deg, #db2777 0%, #831843 100%)"><img src="https://images.unsplash.com/photo-1574169208507-84376144848b?q=80&w=200&auto=format&fit=crop">Royal Purple Velvet</button>
+            <button class="menu-btn" data-bg="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1920&auto=format&fit=crop" data-border="#0f766e" data-accent="#2dd4bf" data-btn="linear-gradient(135deg, #0d9488 0%, #115e59 100%)"><img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=200&auto=format&fit=crop">Neon Teal Glow</button>
+            <button class="menu-btn" data-bg="https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1920&auto=format&fit=crop" data-border="#166534" data-accent="#86efac" data-btn="linear-gradient(135deg, #15803d 0%, #14532d 100%)"><img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=200&auto=format&fit=crop">Alpine Mountain Green</button>
+            <button class="menu-btn" data-bg="https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?q=80&w=1920&auto=format&fit=crop" data-border="#b91c1c" data-accent="#fca5a5" data-btn="linear-gradient(135deg, #dc2626 0%, #991b1b 100%)"><img src="https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?q=80&w=200&auto=format&fit=crop">Crimson Red Fire</button>
+
+            <!-- 15 New Added Themes -->
+            <button class="menu-btn" data-bg="https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1920&auto=format&fit=crop" data-border="#3b82f6" data-accent="#93c5fd" data-btn="linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)"><img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=200&auto=format&fit=crop">Galaxy Space Universe</button>
+            <button class="menu-btn" data-bg="https://images.unsplash.com/photo-1538370965046-79c0d6907d47?q=80&w=1920&auto=format&fit=crop" data-border="#8b5cf6" data-accent="#c4b5fd" data-btn="linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)"><img src="https://images.unsplash.com/photo-1538370965046-79c0d6907d47?q=80&w=200&auto=format&fit=crop">Cyberpunk Neon City</button>
+            <button class="menu-btn" data-bg="https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?q=80&w=1920&auto=format&fit=crop" data-border="#eab308" data-accent="#fde047" data-btn="linear-gradient(135deg, #ca8a04 0%, #854d0e 100%)"><img src="https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?q=80&w=200&auto=format&fit=crop">Golden Desert Dunes</button>
+            <button class="menu-btn" data-bg="https://images.unsplash.com/photo-1517816743773-6e0fd518b4a6?q=80&w=1920&auto=format&fit=crop" data-border="#64748b" data-accent="#e2e8f0" data-btn="linear-gradient(135deg, #475569 0%, #1e293b 100%)"><img src="https://images.unsplash.com/photo-1517816743773-6e0fd518b4a6?q=80&w=200&auto=format&fit=crop">Dark Minimalist Carbon</button>
+            <button class="menu-btn" data-bg="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1920&auto=format&fit=crop" data-border="#0284c7" data-accent="#7dd3fc" data-btn="linear-gradient(135deg, #0284c7 0%, #0c4a6e 100%)"><img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=200&auto=format&fit=crop">Snowy Mountain Peak</button>
+            <button class="menu-btn" data-bg="https://images.unsplash.com/photo-1508739773434-c26b3d09e071?q=80&w=1920&auto=format&fit=crop" data-border="#f43f5e" data-accent="#fda4af" data-btn="linear-gradient(135deg, #e11d48 0%, #881337 100%)"><img src="https://images.unsplash.com/photo-1508739773434-c26b3d09e071?q=80&w=200&auto=format&fit=crop">Neon Lights Fantasy</button>
+            <button class="menu-btn" data-bg="https://images.unsplash.com/photo-1542224566-6e85f2e6772f?q=80&w=1920&auto=format&fit=crop" data-border="#059669" data-accent="#6ee7b7" data-btn="linear-gradient(135deg, #059669 0%, #065f46 100%)"><img src="https://images.unsplash.com/photo-1542224566-6e85f2e6772f?q=80&w=200&auto=format&fit=crop">Tropical Palm Oasis</button>
+            <button class="menu-btn" data-bg="https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?q=80&w=1920&auto=format&fit=crop" data-border="#ea580c" data-accent="#fdba74" data-btn="linear-gradient(135deg, #ea580c 0%, #9a3412 100%)"><img src="https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?q=80&w=200&auto=format&fit=crop">World Map With orange theme</button>
+            <button class="menu-btn" data-bg="https://images.unsplash.com/photo-1509557965875-b88c97052f0e?q=80&w=1920&auto=format&fit=crop" data-border="#4f46e5" data-accent="#a5b4fc" data-btn="linear-gradient(135deg, #6366f1 0%, #312e81 100%)"><img src="https://images.unsplash.com/photo-1509557965875-b88c97052f0e?q=80&w=200&auto=format&fit=crop">Mystic Blue Nebula</button>
+            <button class="menu-btn" data-bg="https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=1920&auto=format&fit=crop" data-border="#16a34a" data-accent="#bbf7d0" data-btn="linear-gradient(135deg, #16a34a 0%, #14532d 100%)"><img src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=200&auto=format&fit=crop">Green Grass Meadow</button>
+            <button class="menu-btn" data-bg="https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=1920&auto=format&fit=crop" data-border="#15803d" data-accent="#dcfce7" data-btn="linear-gradient(135deg, #15803d 0%, #052e16 100%)"><img src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=200&auto=format&fit=crop">Adventure Valley Forest</button>
+            <button class="menu-btn" data-bg="https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?q=80&w=1920&auto=format&fit=crop" data-border="#b45309" data-accent="#fef3c7" data-btn="linear-gradient(135deg, #b45309 0%, #451a03 100%)"><img src="https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?q=80&w=200&auto=format&fit=crop">Rustic Timber Cabin</button>
+
+            <!-- 10 New Nature Vibe Themes -->
+            <button class="menu-btn" data-bg="https://images.unsplash.com/photo-1473448912268-2022ce9509d8?q=80&w=1920&auto=format&fit=crop" data-border="#14532d" data-accent="#86efac" data-btn="linear-gradient(135deg, #16a34a 0%, #14532d 100%)"><img src="https://images.unsplash.com/photo-1473448912268-2022ce9509d8?q=80&w=200&auto=format&fit=crop">Whispering Pine Forest</button>
+            <button class="menu-btn" data-bg="https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=1920&auto=format&fit=crop" data-border="#0369a1" data-accent="#7dd3fc" data-btn="linear-gradient(135deg, #0284c7 0%, #0369a1 100%)"><img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=200&auto=format&fit=crop">Serene Mountain Lake</button>
+            <button class="menu-btn" data-bg="https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?q=80&w=1920&auto=format&fit=crop" data-border="#9333ea" data-accent="#e9d5ff" data-btn="linear-gradient(135deg, #a855f7 0%, #581c87 100%)"><img src="https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?q=80&w=200&auto=format&fit=crop">Blooming Lavender Field</button>
+            <button class="menu-btn" data-bg="https://images.unsplash.com/photo-1444703686981-a3abbc4d4fe3?q=80&w=1920&auto=format&fit=crop" data-border="#312e81" data-accent="#c7d2fe" data-btn="linear-gradient(135deg, #4f46e5 0%, #312e81 100%)"><img src="https://images.unsplash.com/photo-1444703686981-a3abbc4d4fe3?q=80&w=200&auto=format&fit=crop">Starlit Valley Night</button>
+            <button class="menu-btn" data-bg="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=1920&auto=format&fit=crop" data-border="#3f3f46" data-accent="#e4e4e7" data-btn="linear-gradient(135deg, #52525b 0%, #18181b 100%)"><img src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=200&auto=format&fit=crop">Misty Mountain Valley</button>
+
+            <!-- 20 New Unique Nature Vibe Themes -->
+            <button class="menu-btn" data-bg="https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=1920&auto=format&fit=crop" data-border="#3f6212" data-accent="#bef264" data-btn="linear-gradient(135deg, #65a30d 0%, #3f6212 100%)"><img src="https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=200&auto=format&fit=crop">Deep Emerald Woods</button>
+        </div>
+        <button class="menu-btn" id="btn-back-main2" style="background: rgba(255,255,255,0.1); margin-top: 5px;">Back</button>
+    </div>
+
+    <!-- Active Game Screen -->
+    <div class="game-screen" id="game-screen">
+        <!-- Left Panel -->
+        <div class="side-panel-left">
+            <button class="icon-btn" id="btn-open-menu" title="Menu">☰</button>
+            <div class="chess-clock" id="black-clock">Black: 02:30</div>
+            <div class="captured-box">
+                <div class="captured-title">Captured by Black</div>
+                <div class="captured-icons" id="white-captured"></div>
+            </div>
+        </div>
+
+        <!-- Center Board Arena with Pause Overlay -->
+        <div class="board-arena" id="board-arena">
+            <div id="board"></div>
+            <div class="board-footer-label" id="status-label">White's Move</div>
+            
+            <!-- Pause Overlay -->
+            <div class="pause-overlay" id="pause-overlay">
+                <div class="dialog-title" style="margin-bottom: 12px;">Game Paused</div>
+                <div class="dialog-desc" style="margin-bottom: 20px;">Board is hidden for fair play.</div>
+                <button class="menu-btn" id="btn-resume" style="width: 160px; background: #22c55e;">▶ Play / Resume</button>
+            </div>
+        </div>
+
+        <!-- Right Panel -->
+        <div class="side-panel-right">
+            <button class="icon-btn" id="btn-pause" title="Pause Game">⏸️</button>
+            <button class="icon-btn" id="btn-restart" title="Restart Game">🔄</button>
+            <div class="chess-clock active-timer" id="white-clock">White: 02:30</div>
+            <div class="captured-box">
+                <div class="captured-title">Captured by White</div>
+                <div class="captured-icons" id="black-captured"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quit Modal -->
+    <div class="modal-overlay" id="quit-modal">
+        <div class="dialog-card">
+            <div class="dialog-title">Quit Game?</div>
+            <div class="dialog-desc">Are you sure you want to quit the Game and return to the main menu?</div>
+            <div style="display: flex; gap: 10px;">
+                <button class="menu-btn" id="btn-cancel-quit" style="background: rgba(255,255,255,0.1);">Cancel</button>
+                <button class="menu-btn" id="btn-confirm-quit">Yes, Quit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Victory Modal -->
+    <div class="modal-overlay" id="victory-modal">
+        <div class="dialog-card">
+            <div class="dialog-title" id="winner-title">Game Over! 🎉</div>
+            <div class="dialog-desc" id="winner-desc">White player wins the match!</div>
+            <button class="menu-btn" id="btn-play-again">Play Again</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+
+    <script>
+
+        var board = null;
+        var game = new Chess();
+        var statusLabel = $('#status-label');
+        var selectedSquare = null;
+        var gameMode = 'friend';
+        var botLevel = 'easy';
+        var whiteTime = 150, blackTime = 150; // Set to 2.5 minutes (150 seconds)
+        var timerInterval = null;
+        var capturedWhitePieces = [];
+        var capturedBlackPieces = [];
+
+        // Preload all theme background images instantly to prevent white flash
+        $(document).ready(function() {
+            $('#theme-menu .menu-btn[data-bg]').each(function() {
+                let imgUrl = $(this).attr('data-bg');
+                if(!imgUrl.startsWith('http')) {
+                    imgUrl = 'background.jpg';
+                }
+                let img = new Image();
+                img.src = imgUrl;
+            });
+        });
+
+        // Unicode symbol map for captured pieces display
+        const pieceSymbols = {
+            'p': '♟', 'n': '♞', 'b': '♝', 'r': '♜', 'q': '♛',
+            'P': '♙', 'N': '♘', 'B': '♗', 'R': '♖', 'Q': '♕'
+        };
+
+        // Web Audio Synthesizer
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') { audioCtx.resume(); }
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            let now = audioCtx.currentTime;
+
+            if (type === 'move') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(320, now);
+                osc.frequency.exponentialRampToValueAtTime(150, now + 0.08);
+                gainNode.gain.setValueAtTime(0.2, now);
+                gainNode.gain.linearRampToValueAtTime(0.3, now + 0.08);
+                osc.start(now); osc.stop(now + 0.08);
+            } else if (type === 'capture') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.exponentialRampToValueAtTime(80, now + 0.15);
+                gainNode.gain.setValueAtTime(0.3, now);
+                gainNode.gain.linearRampToValueAtTime(0.03, now + 0.15);
+                osc.start(now); osc.stop(now + 0.15);
+            } else if (type === 'check') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(440, now);
+                osc.frequency.setValueAtTime(660, now + 0.1);
+                gainNode.gain.setValueAtTime(0.3, now);
+                gainNode.gain.linearRampToValueAtTime(0.03, now + 0.25);
+                osc.start(now); osc.stop(now + 0.25);
+            }
+        }
+
+        function pieceTheme(piece) {
+            return 'https://chessboardjs.com/img/chesspieces/wikipedia/' + piece + '.png';
+        }
+
+        function removeDots() { $('.dot').remove(); }
+
+        function showDots(square) {
+            removeDots();
+            var moves = game.moves({ square: square, verbose: true });
+            if (moves.length === 0) return;
+            for (var i = 0; i < moves.length; i++) {
+                var target = moves[i].to;
+                $('#board .square-' + target).append('<div class="dot"></div>');
+            }
+        }
+
+        function formatTime(seconds) {
+            let m = Math.floor(seconds / 60);
+            let s = seconds % 60;
+            return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (game.game_over()) { clearInterval(timerInterval); return; }
+                
+                if (game.turn() === 'w') {
+                    if (whiteTime > 0) whiteTime--;
+                    $('#white-clock').text('White: ' + formatTime(whiteTime));
+                    if (whiteTime === 0) showVictoryModal('Black wins on Time! ⏰');
+                } else {
+                    if (gameMode === 'friend') {
+                        if (blackTime > 0) blackTime--;
+                        $('#black-clock').text('Black: ' + formatTime(blackTime));
+                        if (blackTime === 0) showVictoryModal('White wins on Time! ⏰');
+                    }
+                }
+            }, 1000);
+        }
+
+        // Handle Board Taps/Clicks
+        $('#board').on('click', '.square-55d63', function() {
+            if (game.game_over()) return;
+            if (gameMode === 'bot' && game.turn() === 'b') return;
+
+            var square = $(this).data('square');
+            var piece = game.get(square);
+
+            if (selectedSquare === null) {
+                if (piece != null && piece.color === game.turn()) {
+                    selectedSquare = square;
+                    showDots(square);
+                }
+            } else {
+                var targetPiece = game.get(square);
+                var move = game.move({
+                    from: selectedSquare,
+                    to: square,
+                    promotion: 'q'
+                });
+
+                removeDots();
+
+                if (move === null) {
+                    selectedSquare = null;
+                    if (piece != null && piece.color === game.turn()) {
+                        selectedSquare = square;
+                        showDots(square);
+                    }
+                } else {
+                    if (targetPiece) {
+                        playSound('capture');
+                        if (targetPiece.color === 'w') {
+                            capturedWhitePieces.push(targetPiece.type);
+                        } else {
+                            capturedBlackPieces.push(targetPiece.type);
+                        }
+                        updateCapturedUI();
+                    } else {
+                        playSound('move');
+                    }
+
+                    board.position(game.fen());
+                    updateStatus();
+                    selectedSquare = null;
+                    checkGameEndConditions(move);
+
+                    // Yahan check karein ki kiski turn hai, aur us hisab se purane wale ka time reset kar dein
+                if (game.turn() === 'w') {
+                    blackTime = 150; 
+                } else {
+                    whiteTime = 150; 
+                }
+
+                if (gameMode === 'bot' && !game.game_over() && game.turn() === 'b') {
+                    triggerBotMove(); // <-- Isse naya async bot aur thinking indicator trigger hoga
+                }
+                }
+            }
+        });
+
+        const pieceValues = { p: 10, n: 30, b: 30, r: 50, q: 90, k: 1000 };
+
+        // Yeh function aapko board click event me bot call karne ke liye use karna hai
+        function triggerBotMove() {
+            if (gameMode !== 'bot' || game.game_over() || game.turn() !== 'b') return;
+
+            let currentLevel = typeof botLevel !== 'undefined' ? botLevel : 'medium';
+            if (currentLevel === 'hard') {
+                showThinkingIndicator(true);
+            }
+
+            // Sabhi levels ke liye fixed 2 second ka delay
+            let randomDelay = 2000;
+
+            setTimeout(() => {
+                makeBotMoveAsync(currentLevel);
+                if (currentLevel === 'hard') {
+                    showThinkingIndicator(false);
+                }
+            }, randomDelay);
+        }
+
+        function makeBotMoveAsync(currentLevel) {
+            var moves = game.moves({ verbose: true });
+            if (moves.length === 0) return;
+
+            let chosenMove;
+
+            if (currentLevel === 'easy') {
+                let capturingMoves = moves.filter(m => m.captured);
+                if (capturingMoves.length > 0 && Math.random() > 0.4) {
+                    chosenMove = capturingMoves[Math.floor(Math.random() * capturingMoves.length)];
+                } else {
+                    let chosenMainMove = moves[Math.floor(Math.random() * moves.length)];
+                    chosenMove = moves[Math.floor(Math.random() * moves.length)];
+                }
+            } 
+            else if (currentLevel === 'medium') {
+                let bestScore = -9999;
+                let bestMoves = [];
+
+                moves.forEach(move => {
+                    game.move(move);
+                    let score = evaluateBoard(game);
+                    game.undo();
+
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestMoves = [move];
+                    } else if (score === bestScore) {
+                        bestMoves.push(move);
+                    }
+                });
+                chosenMove = bestMoves[Math.floor(Math.random() * bestMoves.length)];
+            } 
+            else if (currentLevel === 'hard') {
+                let bestScore = -99999;
+                let bestMove = moves[0];
+
+                for (let i = 0; i < moves.length; i++) {
+                    let move = moves[i];
+                    game.move(move);
+                    let score = minimax(game, 2, false, -100000, 100000);
+                    game.undo();
+
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestMove = move;
+                    }
+                }
+                chosenMove = bestMove;
+            }
+
+            var targetPiece = chosenMove.captured ? game.get(chosenMove.to) : null;
+            var move = game.move(chosenMove);
+
+            if (targetPiece) {
+                playSound('capture');
+                if (targetPiece.color === 'w') {
+                    capturedWhitePieces.push(targetPiece.type);
+                } else {
+                    capturedBlackPieces.push(targetPiece.type);
+                }
+                updateCapturedUI();
+            } else {
+                playSound('move');
+            }
+
+            board.position(game.fen());
+            updateStatus();
+            checkGameEndConditions(move);
+        }
+
+        function evaluateBoard(gameInstance) {
+            let totalEvaluation = 0;
+            let boardArr = gameInstance.board();
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    let piece = boardArr[row][col];
+                    if (piece) {
+                        let value = pieceValues[piece.type] || 0;
+                        totalEvaluation += (piece.color === 'b') ? value : -value;
+                    }
+                }
+            }
+            return totalEvaluation;
+        }
+
+        function minimax(gameInstance, depth, isMaximizing, alpha, beta) {
+            if (depth === 0 || gameInstance.game_over()) {
+                return evaluateBoard(gameInstance);
+            }
+
+            let legalMoves = gameInstance.moves({ verbose: true });
+
+            if (isMaximizing) {
+                let maxEval = -99999;
+                for (let i = 0; i < legalMoves.length; i++) {
+                    gameInstance.move(legalMoves[i]);
+                    let evaluation = minimax(gameInstance, depth - 1, false, alpha, beta);
+                    gameInstance.undo();
+                    maxEval = Math.max(maxEval, evaluation);
+                    alpha = Math.max(alpha, evaluation);
+                    if (beta <= alpha) break;
+                }
+                return maxEval;
+            } else {
+                let minEval = 99999;
+                for (let i = 0; i < legalMoves.length; i++) {
+                    gameInstance.move(legalMoves[i]);
+                    let evaluation = minimax(gameInstance, depth - 1, true, alpha, beta);
+                    gameInstance.undo();
+                    minEval = Math.min(minEval, evaluation);
+                    beta = Math.min(beta, evaluation);
+                    if (beta <= alpha) break;
+                }
+                return minEval;
+            }
+        }
+
+        // Thinking Indicator & Animated Dots Logic
+        function showThinkingIndicator(show) {
+            let indicator = $('#bot-thinking-text');
+            if (indicator.length === 0) {
+                // Agar HTML me element nahi hai toh status bar ke paas dynamically create kar dein
+                $('#status').after('<div id="bot-thinking-text" style="text-align:center; font-weight:bold; color:#ff9800; margin:5px; display:none;">Bot is thinking<span class="thinking-dots">.</span></div>');
+                
+                // CSS Animation add kar dete hain taaki dots blink karein
+                if ($('#thinking-style').length === 0) {
+                    $('head').append(`<style id="thinking-style">
+                        @keyframes blinkDots { 0% { content: '.'; } 33% { content: '..'; } 66% { content: '...'; } }
+                        .thinking-dots::after { content: ''; animation: blinkDots 1.2s infinite steps(3); }
+                    </style>`);
+                }
+                indicator = $('#bot-thinking-text');
+            }
+
+            if (show) {
+                indicator.show();
+            } else {
+                indicator.hide();
+            }
+        }
+
+        function updateCapturedUI() {
+            let whiteHtml = capturedWhitePieces.map(p => pieceSymbols[p]).join(' ');
+            let blackHtml = capturedBlackPieces.map(p => pieceSymbols[p.toUpperCase()]).join(' ');
+            $('#white-captured').text(whiteHtml);
+            $('#black-captured').text(blackHtml);
+        }
+
+        function checkGameEndConditions(move) {
+            $('.square-55d63').removeClass('check-blink');
+
+            if (game.in_checkmate()) {
+                clearInterval(timerInterval);
+                // Jiski turn thi wo haar gaya, isliye jeetaa dusra player hoga
+                var winningColor = move.color === 'w' ? 'White' : 'Black';
+                
+                if (gameMode === 'bot') {
+                    if (winningColor === 'Black') {
+                        showVictoryModal("You lose, but you played nice! Keep it up and try again.");
+                    } else {
+                        showVictoryModal("White wins by Checkmate! 🎉");
+                    }
+                } else {
+                    // Friend Mode ke liye exact message
+                    if (winningColor === 'White') {
+                        showVictoryModal("White Win! 🎉");
+                    } else {
+                        showVictoryModal("Black Win! 🎉");
+                    }
+                }
+            } else if (game.in_draw() || game.in_stalemate() || game.insufficient_material()) {
+                clearInterval(timerInterval);
+                showVictoryModal('Game Drawn! 🤝');
+            } else if (game.in_check()) {
+                playSound('check');
+                let turnColor = game.turn();
+                let boardState = game.board();
+                for (let r = 0; r < 8; r++) {
+                    for (let c = 0; c < 8; c++) {
+                        let cell = boardState[r][c];
+                        if (cell && cell.type === 'k' && cell.color === turnColor) {
+                            let sqName = String.fromCharCode(97 + c) + (8 - r);
+                            $('#board .square-' + sqName).addClass('check-blink');
+                        }
+                    }
+                }
+            }
+        }
+
+        function updateStatus() {
+            $('.square-55d63').removeClass('check-blink');
+            if (game.in_check()) {
+                let turnColor = game.turn();
+                let boardState = game.board();
+                for (let r = 0; r < 8; r++) {
+                    for (let c = 0; c < 8; c++) {
+                        let cell = boardState[r][c];
+                        if (cell && cell.type === 'k' && cell.color === turnColor) {
+                            let sqName = String.fromCharCode(97 + c) + (8 - r);
+                            $('#board .square-' + sqName).addClass('check-blink');
+                        }
+                    }
+                }
+            }
+
+            var moveColor = game.turn() === 'w' ? 'White' : 'Black';
+            var text = moveColor + "'s move";
+            if (game.in_check()) text += ' (Check!)';
+            statusLabel.text(text);
+
+            if (game.turn() === 'w') {
+                $('#white-clock').addClass('active-timer');
+                $('#black-clock').removeClass('active-timer');
+            } else {
+                $('#black-clock').addClass('active-timer');
+                $('#white-clock').removeClass('active-timer');
+            }
+
+            // Rotate ONLY pieces & notations 180 degrees in Friend Mode when Black's turn
+            if (gameMode === 'friend') {
+                if (game.turn() === 'b') {
+                    $('#board-arena').addClass('rotate-pieces');
+                } else {
+                    $('#board-arena').removeClass('rotate-pieces');
+                }
+            } else {
+                $('#board-arena').removeClass('rotate-pieces');
+            }
+        }
+
+        function showVictoryModal(msg) {
+            $('#winner-desc').text(msg);
+            $('#victory-modal').addClass('show');
+        }
+
+        // Navigation & UI Event Handlers
+        $('#btn-menu-bot').on('click', function() { $('#main-menu').addClass('hidden'); $('#difficulty-menu').removeClass('hidden'); });
+        $('#btn-back-main').on('click', function() { $('#difficulty-menu').addClass('hidden'); $('#main-menu').removeClass('hidden'); });
+        $('#btn-back-main2').on('click', function() { $('#theme-menu').addClass('hidden'); $('#main-menu').removeClass('hidden'); });
+        $('#btn-theme-settings').on('click', function() { $('#main-menu').addClass('hidden'); $('#theme-menu').removeClass('hidden'); });
+        
+        // Instant Theme selection handler with CSS variable overrides for buttons & borders
+        $('#theme-menu .menu-btn[data-bg]').on('click', function() {
+            let bgUrl = $(this).attr('data-bg');
+            let borderColor = $(this).attr('data-border');
+            let accentColor = $(this).attr('data-accent');
+            let btnGradient = $(this).attr('data-btn');
+
+            if(bgUrl.startsWith('http')) {
+                $('body').css('background-image', `linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1)), url('${bgUrl}')`);
+            } else {
+                $('body').css('background-image', `linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1)), url('background.jpg')`);
+            }
+
+            // Apply dynamic theme colors to match vibe instantly
+            document.documentElement.style.setProperty('--theme-border', borderColor);
+            document.documentElement.style.setProperty('--theme-accent', accentColor);
+            document.documentElement.style.setProperty('--theme-btn-bg', btnGradient);
+            document.documentElement.style.setProperty('--board-border-color', borderColor);
+
+            $('#theme-menu').addClass('hidden');
+            $('#main-menu').removeClass('hidden');
+        });
+
+        $('#btn-vs-friend').on('click', function() { gameMode = 'friend'; startGame(); });
+        $('#btn-level-easy').on('click', function() { gameMode = 'bot'; botLevel = 'easy'; startGame(); });
+        $('#btn-level-medium').on('click', function() { gameMode = 'bot'; botLevel = 'medium'; startGame(); });
+        $('#btn-level-hard').on('click', function() { gameMode = 'bot'; botLevel = 'hard'; startGame(); });
+
+        $('#btn-open-menu').on('click', function() { $('#quit-modal').addClass('show'); });
+        $('#btn-cancel-quit').on('click', function() { $('#quit-modal').removeClass('show'); });
+        $('#btn-confirm-quit').on('click', function() {
+            $('#quit-modal').removeClass('show');
+            $('#game-screen').css('display', 'none');
+            $('#main-menu').removeClass('hidden');
+            clearInterval(timerInterval);
+        });
+
+        // Pause / Resume Handlers
+        $('#btn-pause').on('click', function() {
+            $('#pause-overlay').addClass('show');
+            clearInterval(timerInterval);
+        });
+        $('#btn-resume').on('click', function() {
+            $('#pause-overlay').removeClass('show');
+            startTimer();
+        });
+
+        $('#btn-restart').on('click', function() { startGame(); });
+        $('#btn-play-again').on('click', function() { $('#victory-modal').removeClass('show'); startGame(); });
+
+        function startGame() {
+            $('#main-menu').addClass('hidden');
+            $('#difficulty-menu').addClass('hidden');
+            $('#theme-menu').addClass('hidden');
+            $('#pause-overlay').removeClass('show');
+            $('#game-screen').css('display', 'flex');
+
+            game.reset();
+            removeDots();
+            selectedSquare = null;
+            whiteTime = 150; // 2.5 minutes
+            blackTime = 150; // 2.5 minutes
+            capturedWhitePieces = [];
+            capturedBlackPieces = [];
+            updateCapturedUI();
+
+            $('#white-clock').text('White: 02:30');
+            $('#black-clock').text(gameMode === 'bot' ? 'Black: Bot' : 'Black: 02:30');
+            $('#board-arena').removeClass('rotate-pieces');
+
+            if (board == null) {
+                board = Chessboard('board', {
+                    draggable: false,
+                    position: 'start',
+                    showNotation: true,
+                    pieceTheme: pieceTheme
+                });
+            } else {
+                board.start();
+            }
+            updateStatus();
+            startTimer();
+        }
+// Background Music Setup
+const bgMusic = new Audio('bgm.mp3');
+bgMusic.loop = true;  
+bgMusic.volume = 0.4; 
+
+let isMusicStarted = false;
+let clickCount = 0;
+const totalClicks = 6; // 6-7 baar mein poora bharega
+
+// Function jo kisi bhi user interaction par music play karega
+function triggerBgmPlay() {
+    if (!isMusicStarted) {
+        bgMusic.play().then(() => {
+            isMusicStarted = true;
+            console.log("Background music started successfully");
+        }).catch(error => {
+            console.log("BGM play failed, retrying on next touch:", error);
+        });
+    }
+}
+
+// Phone aur Web dono ke liye touch/click events par trigger lagayein
+window.addEventListener('click', triggerBgmPlay, { once: false });
+window.addEventListener('touchstart', triggerBgmPlay, { once: false });
+window.addEventListener('keydown', triggerBgmPlay, { once: false });
+
+// Loading screen ke button par bhi special trigger add kar dein taaki user jab bar bhare tabhi music on ho jaye
+document.getElementById('loading-btn').addEventListener('click', function() {
+    triggerBgmPlay();
+    clickCount++;
+    let progress = (clickCount / totalClicks) * 100;
+    if (progress > 100) progress = 100;
+    
+    document.getElementById('loading-bar-fill').style.width = progress + '%';
+
+    if (clickCount >= totalClicks) {
+        setTimeout(() => {
+            const loadingScreen = document.getElementById('loading-screen');
+            loadingScreen.style.opacity = '0';
+            loadingScreen.style.transition = 'opacity 0.5s ease';
+            setTimeout(() => {
+                loadingScreen.style.display = 'none';
+            }, 500);
+        }, 300);
+    }
+});
+const fsBtn = document.getElementById('side-fs-btn');
+  const fsToast = document.getElementById('fs-toast');
+
+  function showToast(message) {
+    fsToast.innerText = message;
+    fsToast.style.display = 'block';
+    setTimeout(() => {
+      fsToast.style.display = 'none';
+    }, 2000);
+  }
+
+  // 1. Screen par kahin bhi touch/click karne par full screen karne ke liye
+  document.addEventListener('click', function() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.log("Fullscreen blocked or not supported");
+      });
+    }
+  });
+
+  // 2. Side wale button ke liye logic
+  fsBtn.addEventListener('click', function(event) {
+    event.stopPropagation(); // Taaki global click conflict na kare
+    
+    if (document.fullscreenElement) {
+      showToast("You are already in full screen");
+    } else {
+      document.documentElement.requestFullscreen().then(() => {
+        fsBtn.style.display = 'block'; // Button hamesha visible rahega
+      }).catch(err => {
+        console.log("Error attempting to enable fullscreen:", err);
+      });
+    }
+  });
+    </script>
+</body>
+</html>
